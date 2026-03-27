@@ -318,10 +318,14 @@ class Unet1D(Module):
         for ind, (dim_in, dim_out) in enumerate(in_out):
             is_last = ind >= (num_resolutions - 1)
 
+            use_attn = ind >= 2
+
             self.downs.append(ModuleList([
                 resnet_block(dim_in, dim_in),
                 resnet_block(dim_in, dim_in),
-                Residual(PreNorm(dim_in, LinearAttention(dim_in))),
+                # Residual(PreNorm(dim_in, LinearAttention(dim_in))),
+                # Downsample(dim_in, dim_out) if not is_last else nn.Conv1d(dim_in, dim_out, 3, padding = 1)
+                Residual(PreNorm(dim_in, LinearAttention(dim_in))) if use_attn else nn.Identity(),
                 Downsample(dim_in, dim_out) if not is_last else nn.Conv1d(dim_in, dim_out, 3, padding = 1)
             ]))
 
@@ -333,10 +337,15 @@ class Unet1D(Module):
         for ind, (dim_in, dim_out) in enumerate(reversed(in_out)):
             is_last = ind == (len(in_out) - 1)
 
+            curr_res_level = num_resolutions - 1 - ind
+            use_attn = curr_res_level >= 2
+
             self.ups.append(ModuleList([
                 resnet_block(dim_out + dim_in, dim_out),
                 resnet_block(dim_out + dim_in, dim_out),
-                Residual(PreNorm(dim_out, LinearAttention(dim_out))),
+                # Residual(PreNorm(dim_out, LinearAttention(dim_out))),
+                # Upsample(dim_out, dim_in) if not is_last else  nn.Conv1d(dim_out, dim_in, 3, padding = 1)
+                Residual(PreNorm(dim_out, LinearAttention(dim_out))) if use_attn else nn.Identity(),
                 Upsample(dim_out, dim_in) if not is_last else  nn.Conv1d(dim_out, dim_in, 3, padding = 1)
             ]))
 

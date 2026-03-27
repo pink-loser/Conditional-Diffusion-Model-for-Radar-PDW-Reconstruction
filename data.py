@@ -199,7 +199,7 @@ if __name__ == "__main__":
             'rf_mode': 'fixed', 
             'rf_params':  {'value': 9000, 'length': SEQ_LEN},
             'pw_mode': 'staggered', 
-            'pw_params':  {'staggered_params': [2.0, 2.5], 'length': SEQ_LEN}
+            'pw_params':  {'staggered_params': [2.0, 2.5, 3.0, 3.5], 'length': SEQ_LEN}
         },
 
         # 3. 频率/脉宽组变抗干扰 (Group EP)
