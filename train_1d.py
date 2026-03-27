@@ -93,15 +93,21 @@ class MultiModeRadarDataset1D(Dataset):
         # 基础统计值
         # 2. 统计 RF 的全局均值和标准差 (建议从干净数据中统计)
         all_rf = []
+        all_pw = []
         for s in self.all_samples:
             all_rf.extend(s['clean']['rf'])
+            all_pw.extend(s['clean']['pw']) # 新增：统计 PW
         
         self.rf_mean = np.mean(all_rf)
-        self.rf_std = np.std(all_rf) + 1e-6 # 防止除零
+        self.rf_std = np.std(all_rf) + 1e-6
+        
+        # 2. 新增：计算 PW 的全局均值和标准差
+        self.pw_mean = np.mean(all_pw)
+        self.pw_std = np.std(all_pw) + 1e-6
         
         self.stats = {
-            'pri': {'min': 0, 'max': 100},
-            'pw':  {'min': 0, 'max': 20}
+            'pri': {'min': 0, 'max': 100}
+            # 'pw':  {'min': 0, 'max': 20}
         }
         # 计算 RF 的 Log 统计值用于归一化
         # self.log_rf_min = np.log1p(self.stats['rf']['min'])
@@ -121,7 +127,10 @@ class MultiModeRadarDataset1D(Dataset):
         g[:, 1] = rf_clipped / self.clip_sigma
         
         # PW: 线性归一化
-        g[:, 2] = ((g[:, 2] - self.stats['pw']['min']) / (self.stats['pw']['max'] - self.stats['pw']['min'])) * 2 - 1
+        # g[:, 2] = ((g[:, 2] - self.stats['pw']['min']) / (self.stats['pw']['max'] - self.stats['pw']['min'])) * 2 - 1
+        pw_z = (g[:, 2] - self.pw_mean) / self.pw_std
+        pw_clipped = np.clip(pw_z, -self.clip_sigma, self.clip_sigma)
+        g[:, 2] = pw_clipped / self.clip_sigma
         
         # Mask: [0, 1] -> [-1, 1]
         g[:, 3] = g[:, 3] * 2 - 1
@@ -141,7 +150,9 @@ class MultiModeRadarDataset1D(Dataset):
         g[:, 1] = rf_clipped * self.rf_std + self.rf_mean
         
         # PW 反归一化
-        g[:, 2] = (g[:, 2] + 1) / 2 * (self.stats['pw']['max'] - self.stats['pw']['min']) + self.stats['pw']['min']
+        # g[:, 2] = (g[:, 2] + 1) / 2 * (self.stats['pw']['max'] - self.stats['pw']['min']) + self.stats['pw']['min']
+        pw_clipped = g[:, 2] * self.clip_sigma
+        g[:, 2] = pw_clipped * self.pw_std + self.pw_mean
         
         # Mask 反归一化
         g[:, 3] = (g[:, 3] + 1) / 2
