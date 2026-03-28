@@ -179,49 +179,97 @@ if __name__ == "__main__":
     #     }
     # }
 
+    # configs = {
+    #     # 1. 经典固定搜索模式 (Fixed Search)
+    #     # 模拟远程搜索雷达，参数极其稳定，使用大脉宽保证能量
+    #     'fixed_search': {
+    #         'pri_mode': 'fixed',
+    #         'pri_params': {'value': 80, 'length': SEQ_LEN}, 
+    #         'rf_mode': 'fixed', 
+    #         'rf_params':  {'value': 9400, 'length': SEQ_LEN},
+    #         'pw_mode': 'fixed', 
+    #         'pw_params':  {'value': 10, 'length': SEQ_LEN}
+    #     },
+
+    #     # 2. 参差抗盲速模式 (Staggered Anti-Blind)
+    #     # 模拟火控雷达搜索阶段，PRI 切换以解距离/速度模糊，PW 随之微调
+    #     'staggered_anti_blind': {
+    #         'pri_mode': 'staggered',
+    #         'pri_params': {'staggered_params': [40, 45, 50, 55], 'length': SEQ_LEN},
+    #         'rf_mode': 'fixed', 
+    #         'rf_params':  {'value': 9000, 'length': SEQ_LEN},
+    #         'pw_mode': 'staggered', 
+    #         'pw_params':  {'staggered_params': [2.0, 2.5, 3.0, 3.5], 'length': SEQ_LEN}
+    #     },
+
+    #     # 3. 频率/脉宽组变抗干扰 (Group EP)
+    #     # 模拟电子保护模式，每组脉冲切换频率和脉宽，增加侦察难度
+    #     'group_ep': {
+    #         'pri_mode': 'group',
+    #         'pri_params': {'group_params': [(30, 10), (40, 10)], 'length': SEQ_LEN},
+    #         'rf_mode': 'group', 
+    #         'rf_params':  {'group_params': [(9200, 20), (9500, 20)], 'length': SEQ_LEN},
+    #         'pw_mode': 'group', 
+    #         'pw_params':  {'group_params': [(8, 20), (4, 20)], 'length': SEQ_LEN}
+    #     },
+
+    #     # 4. 线性扫描低截获模式 (LPI Slippery)
+    #     # 模拟低截获概率雷达，参数连续线性变化，PW 逐渐压缩
+    #     'slippery_lpi': {
+    #         'pri_mode': 'slippery',
+    #         'pri_params': {'start': 60, 'end': 30, 'step': -0.2, 'length': SEQ_LEN},
+    #         'rf_mode': 'slippery', 
+    #         'rf_params':  {'start': 8500, 'end': 9500, 'step': 5, 'length': SEQ_LEN},
+    #         'pw_mode': 'slippery', 
+    #         'pw_params':  {'start': 12, 'end': 4, 'step': -0.05, 'length': SEQ_LEN}
+    #     }
+    # }
+
+    # 重新定义四种具有物理耦合特性的模式
     configs = {
-        # 1. 经典固定搜索模式 (Fixed Search)
-        # 模拟远程搜索雷达，参数极其稳定，使用大脉宽保证能量
+        # 1. 经典固定搜索 (Fixed Search) - 耦合：低重频大脉宽
+        # 模拟远程搜索，能量积聚需求导致 PRI 大时 PW 必须足够大
         'fixed_search': {
             'pri_mode': 'fixed',
-            'pri_params': {'value': 80, 'length': SEQ_LEN}, 
+            'pri_params': {'value': 100, 'length': SEQ_LEN}, 
             'rf_mode': 'fixed', 
             'rf_params':  {'value': 9400, 'length': SEQ_LEN},
             'pw_mode': 'fixed', 
-            'pw_params':  {'value': 10, 'length': SEQ_LEN}
+            'pw_params':  {'value': 15, 'length': SEQ_LEN} # 保持长脉冲
         },
 
-        # 2. 参差抗盲速模式 (Staggered Anti-Blind)
-        # 模拟火控雷达搜索阶段，PRI 切换以解距离/速度模糊，PW 随之微调
+        # 2. 参差抗盲速 (Staggered Anti-Blind) - 耦合：固定占空比 (Duty Cycle)
+        # 针对 PW 拟合差：让 PW 的参差比例严格对应 PRI，提供强线性相关性
         'staggered_anti_blind': {
             'pri_mode': 'staggered',
-            'pri_params': {'staggered_params': [40, 45, 50, 55], 'length': SEQ_LEN},
+            'pri_params': {'staggered_params': [40, 50, 60, 70], 'length': SEQ_LEN},
             'rf_mode': 'fixed', 
             'rf_params':  {'value': 9000, 'length': SEQ_LEN},
+            # PW 与 PRI 同步参差，且数值 = PRI * 0.05，模型更容易学习这种倍数关系
             'pw_mode': 'staggered', 
             'pw_params':  {'staggered_params': [2.0, 2.5, 3.0, 3.5], 'length': SEQ_LEN}
         },
 
-        # 3. 频率/脉宽组变抗干扰 (Group EP)
-        # 模拟电子保护模式，每组脉冲切换频率和脉宽，增加侦察难度
-        'group_ep': {
+        # 3.  dwells 组变模式 (Group Agility) - 耦合：同步跳变
+        # 模拟电子保护。关键点：pri, rf, pw 的组长度(duration)必须完全一致
+        'group_agility': {
             'pri_mode': 'group',
-            'pri_params': {'group_params': [(30, 10), (40, 10)], 'length': SEQ_LEN},
+            'pri_params': {'group_params': [(30, 15), (50, 15)], 'length': SEQ_LEN}, # 每15个脉冲切一次
             'rf_mode': 'group', 
-            'rf_params':  {'group_params': [(9200, 20), (9500, 20)], 'length': SEQ_LEN},
+            'rf_params':  {'group_params': [(9200, 15), (9800, 15)], 'length': SEQ_LEN}, # 同步切频率
             'pw_mode': 'group', 
-            'pw_params':  {'group_params': [(8, 20), (4, 20)], 'length': SEQ_LEN}
+            'pw_params':  {'group_params': [(3, 15), (6, 15)], 'length': SEQ_LEN} # 同步切脉宽
         },
 
-        # 4. 线性扫描低截获模式 (LPI Slippery)
-        # 模拟低截获概率雷达，参数连续线性变化，PW 逐渐压缩
+        # 4. 线性扫频模式 (Slippery LPI) - 耦合：线性演变关系
+        # 模拟扫频截获。当 PRI 线性缩短时，RF 线性增加，PW 线性压缩
         'slippery_lpi': {
             'pri_mode': 'slippery',
-            'pri_params': {'start': 60, 'end': 30, 'step': -0.2, 'length': SEQ_LEN},
+            'pri_params': {'start': 80, 'end': 40, 'step': -0.4, 'length': SEQ_LEN},
             'rf_mode': 'slippery', 
-            'rf_params':  {'start': 8500, 'end': 9500, 'step': 5, 'length': SEQ_LEN},
+            'rf_params':  {'start': 8500, 'end': 9500, 'step': 10, 'length': SEQ_LEN},
             'pw_mode': 'slippery', 
-            'pw_params':  {'start': 12, 'end': 4, 'step': -0.05, 'length': SEQ_LEN}
+            'pw_params':  {'start': 10, 'end': 4, 'step': -0.06, 'length': SEQ_LEN}
         }
     }
 
