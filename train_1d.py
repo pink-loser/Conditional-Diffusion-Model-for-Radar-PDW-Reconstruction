@@ -204,6 +204,12 @@ def plot_repair_result_1d(res_clean, res_corr, res_repair, mode_name, step_name)
             # Mask 通道固定坐标轴，防止视觉缩放
             m_repair = res_repair[:, i] > 1e-6
             axes[i].scatter(time_steps[m_repair], res_repair[m_repair, i], color=colors[i], s=10, label='Confidence')
+
+        if i == 2: # PW 通道
+            # 设定统一的 PW 坐标范围为 0 到 20
+            axes[i].set_ylim(-0.5, 20.5) 
+        elif i == 3: # Mask 通道
+            # 保持 Mask 在 0 到 1 之间
             axes[i].set_ylim(-0.1, 1.1)
 
         axes[i].set_ylabel(channels[i])
