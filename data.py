@@ -150,82 +150,7 @@ if __name__ == "__main__":
     SEQ_LEN = 200      # 依据你之前的实验长度
     SAVE_PATH = "./radar_datasets"
 
-    # 定义五种模式的实验参数配置
-    # configs = {
-    #     'fixed': {
-    #         'pri_params': {'value': 10, 'length': SEQ_LEN}, # 缩小PRI
-    #         'rf_mode': 'fixed', 'rf_params': {'value': 10000, 'length': SEQ_LEN},
-    #         'pw_mode': 'fixed', 'pw_params': {'value': 20, 'length': SEQ_LEN}
-    #     },
-    #     'group': {
-    #         'pri_params': {'group_params': [(15, 3), (20, 2), (25, 2)], 'length': SEQ_LEN}, # 缩小PRI
-    #         'rf_mode': 'fixed', 'rf_params': {'value': 9000, 'length': SEQ_LEN},
-    #         'pw_mode': 'fixed', 'pw_params': {'value': 10, 'length': SEQ_LEN}
-    #     },
-    #     'staggered': {
-    #         'pri_params': {'staggered_params': [20, 25, 30], 'length': SEQ_LEN}, # 缩小PRI
-    #         'rf_mode': 'fixed', 'rf_params': {'value': 8000, 'length': SEQ_LEN},
-    #         'pw_mode': 'jittered', 'pw_params': {'value': 50, 'length': SEQ_LEN}
-    #     },
-    #     'slippery': {
-    #         'pri_params': {'start': 20, 'end': 50, 'step': 2, 'length': SEQ_LEN}, # 缩小PRI
-    #         'rf_mode': 'fixed', 'rf_params': {'value': 9000, 'length': SEQ_LEN},
-    #         'pw_mode': 'jittered', 'pw_params': {'value': 20, 'length': SEQ_LEN}
-    #     },
-    #     'jittered': {
-    #         'pri_params': {'value': 15, 'length': SEQ_LEN},
-    #         'rf_mode': 'fixed', 'rf_params': {'value': 10000, 'length': SEQ_LEN},
-    #         'pw_mode': 'fixed', 'pw_params': {'value': 10, 'length': SEQ_LEN}
-    #     }
-    # }
-
-    # configs = {
-    #     # 1. 经典固定搜索模式 (Fixed Search)
-    #     # 模拟远程搜索雷达，参数极其稳定，使用大脉宽保证能量
-    #     'fixed_search': {
-    #         'pri_mode': 'fixed',
-    #         'pri_params': {'value': 80, 'length': SEQ_LEN}, 
-    #         'rf_mode': 'fixed', 
-    #         'rf_params':  {'value': 9400, 'length': SEQ_LEN},
-    #         'pw_mode': 'fixed', 
-    #         'pw_params':  {'value': 10, 'length': SEQ_LEN}
-    #     },
-
-    #     # 2. 参差抗盲速模式 (Staggered Anti-Blind)
-    #     # 模拟火控雷达搜索阶段，PRI 切换以解距离/速度模糊，PW 随之微调
-    #     'staggered_anti_blind': {
-    #         'pri_mode': 'staggered',
-    #         'pri_params': {'staggered_params': [40, 45, 50, 55], 'length': SEQ_LEN},
-    #         'rf_mode': 'fixed', 
-    #         'rf_params':  {'value': 9000, 'length': SEQ_LEN},
-    #         'pw_mode': 'staggered', 
-    #         'pw_params':  {'staggered_params': [2.0, 2.5, 3.0, 3.5], 'length': SEQ_LEN}
-    #     },
-
-    #     # 3. 频率/脉宽组变抗干扰 (Group EP)
-    #     # 模拟电子保护模式，每组脉冲切换频率和脉宽，增加侦察难度
-    #     'group_ep': {
-    #         'pri_mode': 'group',
-    #         'pri_params': {'group_params': [(30, 10), (40, 10)], 'length': SEQ_LEN},
-    #         'rf_mode': 'group', 
-    #         'rf_params':  {'group_params': [(9200, 20), (9500, 20)], 'length': SEQ_LEN},
-    #         'pw_mode': 'group', 
-    #         'pw_params':  {'group_params': [(8, 20), (4, 20)], 'length': SEQ_LEN}
-    #     },
-
-    #     # 4. 线性扫描低截获模式 (LPI Slippery)
-    #     # 模拟低截获概率雷达，参数连续线性变化，PW 逐渐压缩
-    #     'slippery_lpi': {
-    #         'pri_mode': 'slippery',
-    #         'pri_params': {'start': 60, 'end': 30, 'step': -0.2, 'length': SEQ_LEN},
-    #         'rf_mode': 'slippery', 
-    #         'rf_params':  {'start': 8500, 'end': 9500, 'step': 5, 'length': SEQ_LEN},
-    #         'pw_mode': 'slippery', 
-    #         'pw_params':  {'start': 12, 'end': 4, 'step': -0.05, 'length': SEQ_LEN}
-    #     }
-    # }
-
-    # 重新定义四种具有物理耦合特性的模式
+    # 定义四种具有物理耦合特性的模式
     configs = {
         # 1. 经典固定搜索 (Fixed Search) - 耦合：低重频大脉宽
         # 模拟远程搜索，能量积聚需求导致 PRI 大时 PW 必须足够大
@@ -261,15 +186,15 @@ if __name__ == "__main__":
             'pw_params':  {'group_params': [(3, 15), (6, 15)], 'length': SEQ_LEN} # 同步切脉宽
         },
 
-        # 4. 线性扫频模式 (Slippery LPI) - 耦合：线性演变关系
-        # 模拟扫频截获。当 PRI 线性缩短时，RF 线性增加，PW 线性压缩
-        'slippery_lpi': {
+        # 4. 线性扫频模式 (Slippery Swept) - 耦合：占空比约束
+        # 自适应扇区搜索 (Adaptive Sector Scanning)。为了应对远距离处的复杂杂波，雷达会采取增加能量增益的策略
+        'slippery_swept': {
             'pri_mode': 'slippery',
-            'pri_params': {'start': 80, 'end': 40, 'step': -0.4, 'length': SEQ_LEN},
+            'pri_params': {'start': 70, 'end': 80, 'step': 2, 'length': SEQ_LEN},
             'rf_mode': 'slippery', 
-            'rf_params':  {'start': 8500, 'end': 9500, 'step': 10, 'length': SEQ_LEN},
+            'rf_params':  {'start': 8500, 'end': 9500, 'step': 200, 'length': SEQ_LEN},
             'pw_mode': 'slippery', 
-            'pw_params':  {'start': 10, 'end': 4, 'step': -0.06, 'length': SEQ_LEN}
+            'pw_params':  {'start': 5, 'end': 10, 'step': 1, 'length': SEQ_LEN}
         }
     }
 
